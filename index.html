@@ -6,10 +6,10 @@
     <title>Chord Document</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,700;1,400;1,700&display=swap');
         
         body {
-            font-family: 'Courier Prime', monospace;
+            font-family: 'Montserrat', sans-serif;
             background-color: #f3f4f6;
         }
         .paper-container {
@@ -132,7 +132,7 @@
             canvas.height = documentContent.length * lineSpacing + (2 * textPadding);
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            ctx.font = '28px Courier Prime';
+            ctx.font = 'bold 28px Montserrat';
             ctx.fillStyle = '#1f2937';
             ctx.textAlign = 'left';
 
