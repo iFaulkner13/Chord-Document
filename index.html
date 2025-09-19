@@ -18,7 +18,8 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             padding: 2.5rem;
             width: 100%;
-            max-width: 800px;
+            /* A4 long size bond paper is roughly 8.5 x 13 inches, which is about 816px wide at 96 DPI. */
+            max-width: 816px;
         }
         .symbol-grid {
             display: grid;
@@ -48,7 +49,7 @@
     <!-- Main Container -->
     <div class="max-w-4xl w-full">
         <!-- Header -->
-        <h1 class="text-3xl font-bold text-center mb-8 text-gray-800">Chord Document</h1>
+        <h1 id="songTitle" class="text-3xl font-bold text-center mb-8 text-gray-800" contenteditable="true">My Song</h1>
 
         <!-- Symbol Buttons -->
         <div class="mb-8">
@@ -79,8 +80,11 @@
             <button id="newLineBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-full shadow-lg transition-transform duration-200 transform hover:scale-105 focus:outline-none">
                 New Line
             </button>
-            <button id="deleteBtn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-full shadow-lg transition-transform duration-200 transform hover:scale-105 focus:outline-none">
-                Delete
+            <button id="spaceBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-full shadow-lg transition-transform duration-200 transform hover:scale-105 focus:outline-none">
+                Space
+            </button>
+            <button id="backspaceBtn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-full shadow-lg transition-transform duration-200 transform hover:scale-105 focus:outline-none">
+                Backspace
             </button>
         </div>
     </div>
@@ -94,7 +98,8 @@
         const otherSymbolButtonsEl = document.getElementById('otherSymbolButtons');
         const clearBtn = document.getElementById('clearBtn');
         const newLineBtn = document.getElementById('newLineBtn');
-        const deleteBtn = document.getElementById('deleteBtn');
+        const spaceBtn = document.getElementById('spaceBtn');
+        const backspaceBtn = document.getElementById('backspaceBtn');
         const canvas = document.getElementById('scoreCanvas');
         const ctx = canvas.getContext('2d');
 
@@ -108,23 +113,139 @@
         const lineSpacing = 40;
         const textPadding = 20;
         const symbolPadding = 30;
+        // Adjusted max line width to fit the A4 long size
         const maxLineWidth = 750;
 
         // Symbols to be displayed as buttons, now separated by category
         const sectionSymbols = [
-            'INTRO:', 'I:', 'II:', 'III:', 'IV:', 'CHO:','BRIDGE:','FINALE:','CODA:'
+            'INTRO:', 'I:', 'II:', 'III:', 'IV:', 'CHO:', 'BRIDGE:', 'INTERLUDE:', 'FINALE:', 'CODA:'
         ];
         
+        // Chords with HTML formatting for superscripts and subscripts
         const chordSymbols = [
-            'F', 'C', 'G', 'Am', 'Dm', 'Em',
-            'F/C', 'Bb/C', 'F/Bb', 'A/C',
-            'G7', 'Cm7', 'Gm7', 'Fm7', 'Bb7',
-            'F/A', 'C/G', 'Am/D', 'C/E'
+            { text: 'A', display: 'A' },
+            { text: 'A/C', display: 'A/C' },
+            { text: 'A7', display: 'A<sub>7</sub>' },
+            { text: 'A♭', display: 'A♭' },
+            { text: 'A♭/C', display: 'A♭/C' },
+            { text: 'A♭/D♭', display: 'A♭/D♭' },
+            { text: 'A♭/E♭', display: 'A♭/E♭' },
+            { text: 'A♭/F', display: 'A♭/F' },
+            { text: 'A♭/G♭', display: 'A♭/G♭' },
+            { text: 'A♭2/C', display: 'A♭<sup>2</sup>/C' },
+            { text: 'A♭7', display: 'A♭<sub>7</sub>' },
+            { text: 'Am7', display: 'A<sub>m7</sub>' },
+            { text: 'B♭', display: 'B♭' },
+            { text: 'B♭/C', display: 'B♭/C' },
+            { text: 'B♭/F', display: 'B♭/F' },
+            { text: 'B♭/G', display: 'B♭/G' },
+            { text: 'B♭6/G', display: 'B♭<sup>6</sup>/G' },
+            { text: 'B♭m', display: 'B♭<sub>m</sub>' },
+            { text: 'B♭m2', display: 'B♭m<sup>2</sup>' },
+            { text: 'B♭m6/G', display: 'B♭m<sub>6</sub>/G' },
+            { text: 'B♭m7', display: 'B♭m<sub>7</sub>' },
+            { text: 'B♭m7/A♭', display: 'B♭m<sub>7</sub>/A♭' },
+            { text: 'Bm/B♭', display: 'B<sub>m</sub>/B♭' },
+            { text: 'C', display: 'C' },
+            { text: 'C/E', display: 'C/E' },
+            { text: 'C/G', display: 'C/G' },
+            { text: 'Cm7', display: 'C<sub>m7</sub>' },
+            { text: 'D/F', display: 'D/F' },
+            { text: 'D/A♭', display: 'D/A♭' },
+            { text: 'D♭', display: 'D♭' },
+            { text: 'D♭/A♭', display: 'D♭/A♭' },
+            { text: 'D♭/B♭', display: 'D♭/B♭' },
+            { text: 'D♭/E♭', display: 'D♭/E♭' },
+            { text: 'D♭/F', display: 'D♭/F' },
+            { text: 'D♭/G♭', display: 'D♭/G♭' },
+            { text: 'D♭2', display: 'D♭<sup>2</sup>' },
+            { text: 'D♭m7', display: 'D♭m<sub>7</sub>' },
+            { text: 'E♭', display: 'E♭' },
+            { text: 'E♭/C', display: 'E♭/C' },
+            { text: 'E♭/G', display: 'E♭/G' },
+            { text: 'E♭m6/C', display: 'E♭m<sub>6</sub>/C' },
+            { text: 'E♭m7', display: 'E♭m<sub>7</sub>' },
+            { text: 'F', display: 'F' },
+            { text: 'F/A', display: 'F/A' },
+            { text: 'F/B♭', display: 'F/B♭' },
+            { text: 'F/C', display: 'F/C' },
+            { text: 'F/E♭', display: 'F/E♭' },
+            { text: 'F/G', display: 'F/G' },
+            { text: 'F+', display: 'F+' },
+            { text: 'F+/B♭', display: 'F+/B♭' },
+            { text: 'F7', display: 'F<sub>7</sub>' },
+            { text: 'Fm6/D', display: 'Fm<sub>6</sub>/D' },
+            { text: 'Fm7', display: 'Fm<sub>7</sub>' },
+            { text: 'Fsus', display: 'F<sub>sus</sub>' },
+            { text: 'G', display: 'G' },
+            { text: 'G/A', display: 'G/A' },
+            { text: 'G/B♭', display: 'G/B♭' },
+            { text: 'G7', display: 'G<sub>7</sub>' },
+            { text: 'G6', display: 'G<sup>6</sup>' },
+            { text: 'G♭', display: 'G♭' },
+            { text: 'G♭/A♭', display: 'G♭/A♭' },
+            { text: 'G♭/B♭', display: 'G♭/B♭' },
+            { text: 'G♭/D♭', display: 'G♭/D♭' },
+            { text: 'G♭/E♭', display: 'G♭/E♭' },
+            { text: 'G♭6/B♭', display: 'G♭<sup>6</sup>/B♭' },
+            { text: 'G♭M7', display: 'G♭M<sup>7</sup>' },
+            { text: 'G♭m6', display: 'G♭m<sub>6</sub>' },
+            { text: 'G♭m6/A', display: 'G♭m<sub>6</sub>/A' },
+            { text: 'Gm/A', display: 'G<sub>m</sub>/A' },
+            { text: 'Gm7', display: 'G<sub>m7</sub>' },
         ];
 
         const otherSymbols = [
-            '-', '•'
+            { text: 'Repeat Section', display: ':|' },
+            { text: 'Pause', display: '⨆' },
+            { text: 'Double Barline', display: '⫽' },
+            { text: 'Dot', display: '•' },
+            { text: 'emdash', display: '—' },
+            { text: 'en dash', display: '–' },
+            { text: 'Dotted Quarter Note', display: '♩•' }
         ];
+
+        // Function to draw formatted text on the canvas with correct spacing
+        function drawFormattedText(text, x, y, ctx) {
+            ctx.font = 'bold 28px Montserrat';
+            ctx.fillStyle = '#1f2937';
+            ctx.textBaseline = 'middle';
+            let currentX = x;
+
+            const parts = text.split(/(♭|#|<sub>.*?<\/sub>|<sup>.*?<\/sup>|♩|•)/g).filter(Boolean);
+
+            parts.forEach(part => {
+                let subMatch = part.match(/<sub>(.*?)<\/sub>/);
+                let supMatch = part.match(/<sup>(.*?)<\/sup>/);
+
+                if (subMatch) {
+                    ctx.font = 'bold 16px Montserrat';
+                    ctx.fillText(subMatch[1], currentX, y + 10);
+                    currentX += ctx.measureText(subMatch[1]).width;
+                } else if (supMatch) {
+                    ctx.font = 'bold 16px Montserrat';
+                    ctx.fillText(supMatch[1], currentX, y - 10);
+                    currentX += ctx.measureText(supMatch[1]).width;
+                } else if (part === '♩') {
+                    ctx.font = 'bold 28px Montserrat';
+                    ctx.fillText('♩', currentX, y);
+                    currentX += ctx.measureText('♩').width;
+                } else if (part === '•') {
+                    ctx.font = 'bold 28px Montserrat';
+                    ctx.fillText('•', currentX, y + 10);
+                    currentX += ctx.measureText('•').width;
+                } else {
+                    ctx.font = 'bold 28px Montserrat';
+                    ctx.fillText(part, currentX, y);
+                    currentX += ctx.measureText(part).width;
+                }
+            });
+
+            // Add fixed padding after each symbol to ensure consistent spacing
+            currentX += symbolPadding;
+            
+            return currentX - x;
+        }
 
         // Main function to draw the document
         function drawDocument() {
@@ -132,25 +253,25 @@
             canvas.height = documentContent.length * lineSpacing + (2 * textPadding);
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            ctx.font = 'bold 28px Montserrat';
-            ctx.fillStyle = '#1f2937';
-            ctx.textAlign = 'left';
-
             documentContent.forEach((line, lineIndex) => {
                 let xPosition = textPadding;
                 const yPosition = (lineIndex * lineSpacing) + textPadding + 15;
                 
                 line.forEach((symbol, symbolIndex) => {
+                    const cleanSymbol = symbol.replace(/(<([^>]+)>)/ig, '');
+                    const symbolWidth = ctx.measureText(cleanSymbol).width;
+                    
                     // Draw highlight
                     if (isHighlighted({ line: lineIndex, index: symbolIndex })) {
                         ctx.save();
                         ctx.fillStyle = 'rgba(173, 216, 230, 0.5)'; // Light blue highlight
-                        ctx.fillRect(xPosition, yPosition - 25, ctx.measureText(symbol).width + symbolPadding, lineSpacing - 10);
+                        ctx.fillRect(xPosition - symbolPadding/2, yPosition - 25, symbolWidth + symbolPadding, lineSpacing - 10);
                         ctx.restore();
                     }
 
-                    ctx.fillText(symbol, xPosition, yPosition);
-                    xPosition += ctx.measureText(symbol).width + symbolPadding;
+                    // Draw the formatted symbol
+                    drawFormattedText(symbol, xPosition, yPosition, ctx);
+                    xPosition += symbolWidth + symbolPadding;
                 });
             });
         }
@@ -165,8 +286,8 @@
 
             const minLine = Math.min(startLine, endLine);
             const maxLine = Math.max(startLine, endLine);
-            const minIndex = (startLine === minLine) ? Math.min(startIndex, endIndex) : Math.max(startIndex, endIndex);
-            const maxIndex = (endLine === maxLine) ? Math.max(startIndex, endIndex) : Math.min(startIndex, endIndex);
+            const minIndex = (startLine === minLine && startLine === endLine) ? Math.min(startIndex, endIndex) : startIndex;
+            const maxIndex = (endLine === maxLine && startLine === endLine) ? Math.max(startIndex, endIndex) : endIndex;
 
             return (pos.line > minLine || (pos.line === minLine && pos.index >= minIndex)) &&
                    (pos.line < maxLine || (pos.line === maxLine && pos.index < maxIndex));
@@ -179,7 +300,7 @@
                 let xPosition = textPadding;
                 for (let i = 0; i < cursorPosition.index; i++) {
                     const symbol = documentContent[cursorPosition.line][i];
-                    xPosition += ctx.measureText(symbol).width + symbolPadding;
+                    xPosition += ctx.measureText(symbol.replace(/(<([^>]+)>)/ig, '')).width + symbolPadding;
                 }
                 const yPosition = (cursorPosition.line * lineSpacing) + textPadding + 15;
                 ctx.fillRect(xPosition - 2, yPosition - 20, 2, 20);
@@ -202,9 +323,9 @@
             // Check if the new symbol will fit on the current line
             let currentLineTextWidth = 0;
             for (let i = 0; i < documentContent[cursorPosition.line].length; i++) {
-                currentLineTextWidth += ctx.measureText(documentContent[cursorPosition.line][i]).width + symbolPadding;
+                currentLineTextWidth += ctx.measureText(documentContent[cursorPosition.line][i].replace(/(<([^>]+)>)/ig, '')).width + symbolPadding;
             }
-            const newSymbolWidth = ctx.measureText(symbol).width + symbolPadding;
+            const newSymbolWidth = ctx.measureText(symbol.replace(/(<([^>]+)>)/ig, '')).width + symbolPadding;
             const newLineWidth = currentLineTextWidth + newSymbolWidth;
 
             // If the new symbol doesn't fit, create a new line
@@ -240,7 +361,6 @@
         }
 
         function deleteHighlightedContent() {
-            // This is a simplified deletion. For full functionality, you'd need to handle multi-line deletes.
             const startLine = highlightStart.line;
             const startIndex = highlightStart.index;
             const endLine = cursorPosition.line;
@@ -288,7 +408,7 @@
                 let xPosition = textPadding;
                 let foundIndex = 0;
                 for (let i = 0; i < documentContent[clickedLine].length; i++) {
-                    const symbol = documentContent[clickedLine][i];
+                    const symbol = documentContent[clickedLine][i].replace(/(<([^>]+)>)/ig, '');
                     const symbolWidth = ctx.measureText(symbol).width + symbolPadding;
                     if (x >= xPosition && x <= xPosition + symbolWidth) {
                         foundIndex = i;
@@ -313,7 +433,7 @@
                 let xPosition = textPadding;
                 let foundIndex = 0;
                 for (let i = 0; i < documentContent[clickedLine].length; i++) {
-                    const symbol = documentContent[clickedLine][i];
+                    const symbol = documentContent[clickedLine][i].replace(/(<([^>]+)>)/ig, '');
                     const symbolWidth = ctx.measureText(symbol).width + symbolPadding;
                     if (x >= xPosition && x <= xPosition + symbolWidth) {
                         foundIndex = i;
@@ -340,7 +460,7 @@
                 let xPosition = textPadding;
                 let foundIndex = 0;
                 for (let i = 0; i < documentContent[clickedLine].length; i++) {
-                    const symbol = documentContent[clickedLine][i];
+                    const symbol = documentContent[clickedLine][i].replace(/(<([^>]+)>)/ig, '');
                     const symbolWidth = ctx.measureText(symbol).width + symbolPadding;
                     if (x >= xPosition && x <= xPosition + symbolWidth) {
                         foundIndex = i;
@@ -373,18 +493,18 @@
             // Render chord buttons
             chordSymbols.forEach(symbol => {
                 const button = document.createElement('button');
-                button.textContent = symbol;
                 button.className = 'symbol-button';
-                button.onclick = () => addSymbolToDocument(symbol);
+                button.innerHTML = symbol.display;
+                button.onclick = () => addSymbolToDocument(symbol.display);
                 chordButtonsEl.appendChild(button);
             });
 
             // Render other symbols
             otherSymbols.forEach(symbol => {
                 const button = document.createElement('button');
-                button.textContent = symbol;
                 button.className = 'symbol-button';
-                button.onclick = () => addSymbolToDocument(symbol);
+                button.innerHTML = symbol.display;
+                button.onclick = () => addSymbolToDocument(symbol.display);
                 otherSymbolButtonsEl.appendChild(button);
             });
         }
@@ -404,7 +524,8 @@
         canvas.addEventListener('mousedown', handleMouseDown);
         clearBtn.onclick = clearDocument;
         newLineBtn.onclick = addNewLine;
-        deleteBtn.onclick = deleteSymbol;
+        spaceBtn.onclick = () => addSymbolToDocument(' ');
+        backspaceBtn.onclick = deleteSymbol;
     </script>
 </body>
 </html>
