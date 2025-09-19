@@ -199,10 +199,27 @@
             { text: 'Repeat Section', display: ':|' },
             { text: 'Pause', display: '⨆' },
             { text: 'Double Barline', display: '⫽' },
+            { text: 'Fermata', display: '𝄬' },
+            { text: 'Dotted Quarter Note', display: '♩•' },
+            { text: 'Whole Note', display: '𝄡' },
+            { text: 'Half Note', display: '𝄢' },
+            { text: 'Quarter Note', display: '𝄣' },
+            { text: 'Eighth Note', display: '𝄤' },
+            { text: 'Sixteenth Note', display: '𝄥' },
+            { text: 'Whole Rest', display: '𝄺' },
+            { text: 'Half Rest', display: '𝄻' },
+            { text: 'Quarter Rest', display: '𝄼' },
+            { text: 'Eighth Rest', display: '𝄽' },
+            { text: 'Sixteenth Rest', display: '𝄾' },
             { text: 'Dot', display: '•' },
             { text: 'emdash', display: '—' },
             { text: 'en dash', display: '–' },
-            { text: 'Dotted Quarter Note', display: '♩•' }
+            { text: 'Crescendo', display: ' crescendo' },
+            { text: 'Decrescendo', display: ' decrescendo' },
+            { text: 'Piano', display: 'p' },
+            { text: 'Forte', display: 'f' },
+            { text: 'Mezzo-Piano', display: 'mp' },
+            { text: 'Mezzo-Forte', display: 'mf' },
         ];
 
         // Function to draw formatted text on the canvas with correct spacing
@@ -212,7 +229,7 @@
             ctx.textBaseline = 'middle';
             let currentX = x;
 
-            const parts = text.split(/(♭|#|<sub>.*?<\/sub>|<sup>.*?<\/sup>|♩|•)/g).filter(Boolean);
+            const parts = text.split(/(♭|#|<sub>.*?<\/sub>|<sup>.*?<\/sup>|♩|•|𝄡|𝄢|𝄣|𝄤|𝄥|𝄺|𝄻|𝄼|𝄽|𝄾)/g).filter(Boolean);
 
             parts.forEach(part => {
                 let subMatch = part.match(/<sub>(.*?)<\/sub>/);
@@ -226,10 +243,14 @@
                     ctx.font = 'bold 16px Montserrat';
                     ctx.fillText(supMatch[1], currentX, y - 10);
                     currentX += ctx.measureText(supMatch[1]).width;
-                } else if (part === '♩') {
+                } else if (['♩', '𝄡', '𝄢', '𝄣', '𝄤', '𝄥'].includes(part)) {
                     ctx.font = 'bold 28px Montserrat';
-                    ctx.fillText('♩', currentX, y);
-                    currentX += ctx.measureText('♩').width;
+                    ctx.fillText(part, currentX, y);
+                    currentX += ctx.measureText(part).width;
+                } else if (['𝄺', '𝄻', '𝄼', '𝄽', '𝄾'].includes(part)) {
+                    ctx.font = 'bold 28px Montserrat';
+                    ctx.fillText(part, currentX, y);
+                    currentX += ctx.measureText(part).width;
                 } else if (part === '•') {
                     ctx.font = 'bold 28px Montserrat';
                     ctx.fillText('•', currentX, y + 10);
